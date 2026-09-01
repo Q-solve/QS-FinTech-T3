@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface HealthStatus {
-  status: string;
-}
+/**
+ * Only the final model feature fields should be sent.
+ */
+export type AnalyzeInputTransaction = {[key: string]: string | number};
