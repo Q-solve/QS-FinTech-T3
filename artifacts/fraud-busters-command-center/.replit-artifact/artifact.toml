@@ -1,0 +1,19 @@
+kind = "design-system"
+previewPath = "/fraud-busters-command-center/"
+title = "Fraud Busters Command Center"
+description = "A reusable visual system for Fraud Busters, a quantum-enhanced mobile-money fraud intelligence interface for East African risk operators, technical judges, and responsible decision-support workflows."
+version = "1.0.0"
+id = "artifacts/fraud-busters-command-center"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/fraud-busters-command-center/" ]
+localPort = 24713
+
+[services.development]
+run = "pnpm --filter @workspace/fraud-busters-command-center run dev"
+
+[services.env]
+PORT = "24713"
+BASE_PATH = "/fraud-busters-command-center/"
