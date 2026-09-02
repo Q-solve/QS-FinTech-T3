@@ -22,6 +22,7 @@ export * from './featureDefinition';
 export * from './featureDefinitionType';
 export * from './featureOption';
 export * from './healthStatus';
+export * from './healthStatusExecutionMode';
 export * from './modelConfig';
 export * from './modelConfigMetadata';
 export * from './modelConfigThresholdConfig';

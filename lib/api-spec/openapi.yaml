@@ -113,7 +113,14 @@ components:
       properties:
         status:
           type: string
-      required: [status]
+        model_ready:
+          type: boolean
+        execution_mode:
+          type: string
+          enum: [live, mock, cached, fallback, unavailable]
+        timestamp:
+          type: string
+      required: [status, model_ready, execution_mode, timestamp]
     ErrorResponse:
       type: object
       properties:

@@ -5,8 +5,22 @@
  * Fraud Busters model-analysis and benchmark contract
  * OpenAPI spec version: 0.1.0
  */
+export type HealthStatusExecutionMode = typeof HealthStatusExecutionMode[keyof typeof HealthStatusExecutionMode];
+
+
+export const HealthStatusExecutionMode = {
+  live: 'live',
+  mock: 'mock',
+  cached: 'cached',
+  fallback: 'fallback',
+  unavailable: 'unavailable',
+} as const;
+
 export interface HealthStatus {
   status: string;
+  model_ready: boolean;
+  execution_mode: HealthStatusExecutionMode;
+  timestamp: string;
 }
 
 export interface ErrorResponse {

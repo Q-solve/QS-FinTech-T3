@@ -13,7 +13,10 @@ import * as zod from 'zod';
  * @summary Health check
  */
 export const HealthCheckResponse = zod.object({
-  "status": zod.string()
+  "status": zod.string(),
+  "model_ready": zod.boolean(),
+  "execution_mode": zod.enum(['live', 'mock', 'cached', 'fallback', 'unavailable']),
+  "timestamp": zod.string()
 })
 
 
