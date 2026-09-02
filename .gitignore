@@ -152,11 +152,26 @@ activemq-data/
 .env
 .envrc
 .venv
+model/.venv/
 env/
 venv/
 ENV/
 env.bak/
 venv.bak/
+
+# Data and Artifacts (Large Files)
+*.csv
+*.tsv
+*.parquet
+*.zip
+*.tar.gz
+*.npz
+*.joblib
+*.pkl
+model/data/
+data/
+.cache/
+
 
 # Spyder project settings
 .spyderproject
