@@ -160,13 +160,16 @@ def main():
     print(f"  * QSVM:          Caught {cm_q[1,1]}/{cm_q[1,1]+cm_q[1,0]} frauds | Missed: {cm_q[1,0]} | False Alarms: {cm_q[0,1]}")
     print(f"  * Classical SVM: Caught {cm_c[1,1]}/{cm_c[1,1]+cm_c[1,0]} frauds | Missed: {cm_c[1,0]} | False Alarms: {cm_c[0,1]}")
     
+    # Dynamic tag based on n_train
+    tag = f"{args.n_train // 1000}k" if args.n_train >= 1000 and args.n_train % 1000 == 0 else str(args.n_train)
+    
     # Export CSV
-    csv_out = os.path.join(args.output_dir, "qsvm_5k_benchmark_results.csv")
+    csv_out = os.path.join(args.output_dir, f"qsvm_{tag}_benchmark_results.csv")
     results_df.to_csv(csv_out, index=False)
     print(f"\nSaved benchmark metrics to: {csv_out}")
     
     # Export Model Artifact (Cross-version portable dictionary)
-    model_out = os.path.join(args.output_dir, "champion_qsvm_model_5k.joblib")
+    model_out = os.path.join(args.output_dir, f"champion_qsvm_model_{tag}.joblib")
     joblib.dump({
         'model': qsvm,
         'feature_map_name': 'zz_circular',
@@ -205,7 +208,7 @@ def main():
     axes[1].legend(loc='lower right')
     axes[1].grid(True, alpha=0.3)
     
-    plot_out = os.path.join(args.output_dir, "qsvm_5k_diagnostic_plots.png")
+    plot_out = os.path.join(args.output_dir, f"qsvm_{tag}_diagnostic_plots.png")
     plt.tight_layout()
     plt.savefig(plot_out)
     print(f"Saved diagnostic plots to: {plot_out}")
