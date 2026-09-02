@@ -1,4 +1,4 @@
-import { type Transaction, type FeatureSchema } from "./types";
+import { type Transaction, type FeatureField, type BenchmarkEntry } from "./types";
 
 export interface FraudScoreResult {
   fraud_score: number;
@@ -6,7 +6,7 @@ export interface FraudScoreResult {
   execution_mode: "mock";
   risk_band: "high-risk signal" | "review recommended" | "lower-risk signal";
   transaction: Transaction;
-  benchmark_table: typeof import("./config").benchmarkTable;
+  benchmark_table: BenchmarkEntry[];
   metadata: {
     feature_count: number;
     dataset: string;
@@ -24,8 +24,8 @@ export interface FraudScoreResult {
 
 export function calculateFraudScore(
   transaction: Transaction,
-  featureSchema: FeatureSchema[],
-  benchmarkTable: ReturnType<typeof import("./config").benchmarkTable>,
+  featureSchema: FeatureField[],
+  benchmarkTable: BenchmarkEntry[],
 ): FraudScoreResult {
   const amount = typeof transaction.amount === "number" ? transaction.amount : 0;
   const originBefore =
@@ -83,7 +83,7 @@ export function calculateFraudScore(
 
 export function validateTransaction(
   transaction: Record<string, unknown>,
-  featureSchema: FeatureSchema[],
+  featureSchema: FeatureField[],
 ): { valid: boolean; errors: string[] } {
   const expectedKeys = new Set(featureSchema.map((field) => field.key));
   const submittedKeys = Object.keys(transaction);
@@ -104,7 +104,7 @@ export function validateTransaction(
         );
       }
       if (field.type === "select") {
-        return typeof value !== "string" || !field.options?.some((option) => option.value === value);
+        return typeof value !== "string" || !field.options?.some((option: { value: string }) => option.value === value);
       }
       return typeof value !== "string";
     })

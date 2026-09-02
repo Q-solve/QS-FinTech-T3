@@ -1,1 +1,0 @@
-- [Managed Vite workflows](vite-workflow-env.md) — standalone Vite builds require workflow-provided PORT and BASE_PATH; verify through the managed workflow.

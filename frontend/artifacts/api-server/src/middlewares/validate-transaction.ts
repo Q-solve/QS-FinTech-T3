@@ -38,7 +38,7 @@ export function validateTransactionMiddleware(
           );
         }
         if (field.type === "select") {
-          return typeof value !== "string" || !field.options?.some((option) => option.value === value);
+          return typeof value !== "string" || !field.options?.some((option: { value: string }) => option.value === value);
         }
         return typeof value !== "string";
       })
