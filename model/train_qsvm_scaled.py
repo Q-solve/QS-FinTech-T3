@@ -165,11 +165,13 @@ def main():
     results_df.to_csv(csv_out, index=False)
     print(f"\nSaved benchmark metrics to: {csv_out}")
     
-    # Export Model Artifact
+    # Export Model Artifact (Cross-version portable dictionary)
     model_out = os.path.join(args.output_dir, "champion_qsvm_model_5k.joblib")
     joblib.dump({
         'model': qsvm,
-        'feature_map': fmap,
+        'feature_map_name': 'zz_circular',
+        'feature_dimension': 6,
+        'circuit_depth': fmap.depth(),
         'n_train': args.n_train,
         'support_vectors_count': len(qsvm.support_),
         'metrics': results[0]
