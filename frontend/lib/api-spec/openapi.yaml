@@ -1,0 +1,287 @@
+openapi: 3.1.0
+info:
+  # Keep the title stable: Orval uses it to derive the generated filenames.
+  title: Api
+  version: 0.1.0
+  description: Fraud Busters model-analysis and benchmark contract
+servers:
+  - url: /api
+    description: Shared API service
+tags:
+  - name: health
+    description: Service health
+  - name: fraud-analysis
+    description: Transaction analysis and model configuration
+  - name: benchmarks
+    description: Comparable model evaluation results
+  - name: overview
+    description: Demo and system status
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      description: Returns server health status
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+  /v1/model-config:
+    get:
+      operationId: getModelConfig
+      tags: [fraud-analysis]
+      summary: Get the active model feature schema
+      description: Returns only the fields the active model accepts.
+      responses:
+        "200":
+          description: Active model configuration
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ModelConfig"
+  /v1/analyze:
+    post:
+      operationId: analyzeTransaction
+      tags: [fraud-analysis]
+      summary: Score a synthetic transaction
+      description: Returns a fraud score, model identity, execution state, and optional comparison metadata.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AnalyzeInput"
+      responses:
+        "200":
+          description: Analysis result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnalyzeResponse"
+        "400":
+          description: Invalid transaction input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "503":
+          description: Model service unavailable
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /v1/benchmarks:
+    get:
+      operationId: getBenchmarks
+      tags: [benchmarks]
+      summary: Get comparable model benchmarks
+      description: Returns model metrics evaluated on one shared split, when available.
+      responses:
+        "200":
+          description: Benchmark result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BenchmarkResponse"
+        "503":
+          description: Benchmark unavailable
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /v1/overview:
+    get:
+      operationId: getOverview
+      tags: [overview]
+      summary: Get command-center status
+      description: Returns safe status metadata for the demo shell.
+      responses:
+        "200":
+          description: Overview status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OverviewResponse"
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+        model_ready:
+          type: boolean
+        execution_mode:
+          type: string
+          enum: [live, mock, cached, fallback, unavailable]
+        timestamp:
+          type: string
+      required: [status, model_ready, execution_mode, timestamp]
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        code:
+          type: string
+      required: [error]
+    FeatureOption:
+      type: object
+      properties:
+        label:
+          type: string
+        value:
+          type: string
+      required: [label, value]
+    FeatureDefinition:
+      type: object
+      properties:
+        key:
+          type: string
+        label:
+          type: string
+        type:
+          type: string
+          enum: [number, select, text]
+        unit:
+          type: ["string", "null"]
+        required:
+          type: boolean
+        min:
+          type: ["number", "null"]
+        max:
+          type: ["number", "null"]
+        placeholder:
+          type: ["string", "null"]
+        description:
+          type: ["string", "null"]
+        options:
+          type: ["array", "null"]
+          items:
+            $ref: "#/components/schemas/FeatureOption"
+      required: [key, label, type, required]
+    ModelConfig:
+      type: object
+      properties:
+        primary_model:
+          type: string
+        supported_models:
+          type: array
+          items:
+            type: string
+        feature_schema:
+          type: array
+          items:
+            $ref: "#/components/schemas/FeatureDefinition"
+        threshold_config:
+          type: ["object", "null"]
+          additionalProperties: true
+        metadata:
+          type: object
+          additionalProperties: true
+      required: [primary_model, supported_models, feature_schema]
+    AnalyzeInput:
+      type: object
+      properties:
+        transaction:
+          type: object
+          description: Only the final model feature fields should be sent.
+          additionalProperties:
+            oneOf:
+              - type: string
+              - type: number
+      required: [transaction]
+    BenchmarkRow:
+      type: object
+      properties:
+        model:
+          type: string
+        roc_auc:
+          type: ["number", "null"]
+        precision:
+          type: ["number", "null"]
+        recall:
+          type: ["number", "null"]
+        f1:
+          type: ["number", "null"]
+        status:
+          type: string
+          enum: [available, unavailable, error]
+        note:
+          type: ["string", "null"]
+      required: [model, status]
+    BenchmarkResponse:
+      type: object
+      properties:
+        benchmark_table:
+          type: array
+          items:
+            $ref: "#/components/schemas/BenchmarkRow"
+        metadata:
+          type: object
+          additionalProperties: true
+        execution_mode:
+          type: string
+          enum: [live, mock, cached, fallback, unavailable]
+        timestamp:
+          type: ["string", "null"]
+      required: [benchmark_table, execution_mode]
+    AnalyzeResponse:
+      type: object
+      properties:
+        fraud_score:
+          type: number
+          minimum: 0
+          maximum: 1
+        model_used:
+          type: string
+        execution_mode:
+          type: string
+          enum: [live, mock, cached, fallback, unavailable]
+        risk_band:
+          type: ["string", "null"]
+        transaction:
+          type: ["object", "null"]
+          additionalProperties:
+            oneOf:
+              - type: string
+              - type: number
+        benchmark_table:
+          type: ["array", "null"]
+          items:
+            $ref: "#/components/schemas/BenchmarkRow"
+        metadata:
+          type: ["object", "null"]
+          additionalProperties: true
+        signal_context:
+          type: ["array", "null"]
+          items:
+            type: string
+        request_id:
+          type: ["string", "null"]
+        timestamp:
+          type: ["string", "null"]
+      required: [fraud_score, model_used, execution_mode]
+    OverviewResponse:
+      type: object
+      properties:
+        system_status:
+          type: string
+          enum: [ready, simulator, fallback, unavailable]
+        execution_mode:
+          type: string
+          enum: [live, mock, cached, fallback, unavailable]
+        primary_model:
+          type: string
+        last_benchmark:
+          type: ["string", "null"]
+        latest_analysis:
+          $ref: "#/components/schemas/AnalyzeResponse"
+        metadata:
+          type: object
+          additionalProperties: true
+      required: [system_status, execution_mode, primary_model]
