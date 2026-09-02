@@ -145,25 +145,43 @@ $$|\psi(\mathbf{x})\rangle = \bigotimes_{j=0}^{5} R_X(\theta_j)|0\rangle, \quad 
 
 ## 6. Classical Baseline Benchmarks & Evaluation
 
-Using our standardized 6-feature dataset, we trained and evaluated three classical models under class-imbalance weighting:
+To establish the classical performance frontier and create the direct mathematical baseline for Quantum SVM, we evaluated five classical model paradigms across linear, kernel, and tree-based methods:
 
-### 6.1 Benchmark Results Summary Table
+### 6.1 Benchmark Results Summary Table (5 Paradigms)
 
 | Model Paradigm | ROC-AUC | PR-AUC (Average Precision) | F1-Score | Precision | Recall | Training Time | Inference Latency |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **Logistic Regression** | `0.9888` | `0.8333` | `0.5368` | `0.3705` | `0.9738` | `0.69 s` | **0.0001 ms/tx** |
-| **Random Forest** | `0.9977` | `0.9844` | `0.8254` | `0.7064` | `0.9927` | `7.43 s` | **0.0060 ms/tx** |
-| **XGBoost (Champion)** | **`0.9996`** | **`0.9982`** | **`0.9963`** | **`0.9976`** | **`0.9951`** | `1.85 s` | **0.0027 ms/tx** |
+| **Logistic Regression** | `0.9888` | `0.8333` | `0.5368` | `0.3705` | `0.9738` | `0.64 s` | **0.0001 ms/tx** |
+| **Linear SVM (`LinearSVC`)** | `0.9881` | `0.8634` | `0.7916` | `0.8606` | `0.7328` | `2.57 s` | **0.0009 ms/tx** |
+| **Kernel SVM (RBF Kernel)** | `0.9975` | `0.9862` | `0.9394` | `0.8975` | `0.9854` | `14.19 s` | **2.4827 ms/tx** |
+| **Random Forest** | `0.9977` | `0.9844` | `0.8254` | `0.7064` | `0.9927` | `6.00 s` | **0.0067 ms/tx** |
+| **XGBoost (Champion)** | **`0.9996`** | **`0.9982`** | **`0.9963`** | **`0.9976`** | **`0.9951`** | `1.07 s` | **0.0012 ms/tx** |
 
-### 6.2 Analysis of Results
-* **Logistic Regression:** Achieves high recall ($97.38\%$, intercepting $1,600$ of $1,643$ frauds), but suffers from $2,720$ false alarms because linear boundaries cannot handle the non-linear interaction between wallet draining and time.
-* **Random Forest:** Decisively outperforms linear models, catching $1,631$ frauds with $678$ false alarms, proving the value of threshold-based non-linear partitioning.
-* **XGBoost (Champion):** Demonstrates extraordinary precision and coverage:
-  * **True Negatives:** $38,353$ ($99.99\%$)
-  * **False Positives (False Alarms):** Only **4** ($0.01\%$)
-  * **False Negatives (Missed Frauds):** Only **8** ($0.49\%$)
-  * **True Positives (Intercepted):** **$1,635$** ($99.51\%$)
-  * **Throughput:** $0.0027\text{ ms/tx}$ ($>370,000\text{ transactions per second}$), exceeding all mobile money core banking latency requirements.
+### 6.2 Classical SVM Analysis & The Direct Bridge to Quantum SVM (QSVM)
+
+#### A. Why Wasn't Kernel SVM Run on the Full Dataset Initially?
+* **Computational & Memory Complexity:** Solving the dual convex quadratic program for standard Kernel SVM (`SVC` with LIBSVM) requires computing and caching the $N \times N$ kernel Gram matrix $K_{ij} = \exp(-\gamma \|\mathbf{x}_i - \mathbf{x}_j\|^2)$.
+* For $N = 160,000$ training samples:
+  * A full Gram matrix requires $160,000 \times 160,000 \times 8 \text{ bytes} \approx 204.8 \text{ GB}$ of RAM.
+  * Training scales as $\mathcal{O}(N^2)$ to $\mathcal{O}(N^3)$, requiring $>30$ minutes of compute time.
+* **Our Dual-SVM Solution:**
+  1. **Linear SVM (`LinearSVC`):** Trained on the **full $N=160,000$ dataset**, scaling as $\mathcal{O}(N)$. Achieves $0.8634$ PR-AUC and $0.7916$ F1-Score in just $2.57$ seconds.
+  2. **Kernel SVM (RBF Kernel):** Trained on a **representative stratified sample of $N=20,000$ transactions** ($821$ fraud cases), which trains in $14.19$ seconds while computing exact non-linear support vector boundaries. It achieves an impressive **`0.9862` PR-AUC** and **`0.9394` F1-Score**.
+
+#### B. Why Classical Kernel SVM is the Essential 1-to-1 Counterpart for QSVM
+* **Mathematical Identity:** Both Classical Kernel SVM and Quantum SVM solve the **identical dual quadratic optimization problem**:
+  $$\max_{\boldsymbol{\alpha}} \sum_{i=1}^N \alpha_i - \frac{1}{2} \sum_{i,j=1}^N \alpha_i \alpha_j y_i y_j K(\mathbf{x}_i, \mathbf{x}_j)$$
+  subject to $0 \le \alpha_i \le C$ and $\sum_i \alpha_i y_i = 0$.
+* **The Single Difference is the Kernel Inner Product:**
+  * **Classical Kernel SVM:** Computes the mathematical Gaussian RBF kernel $K_{\text{RBF}}(\mathbf{x}_i, \mathbf{x}_j) = \exp(-\gamma \|\mathbf{x}_i - \mathbf{x}_j\|^2)$.
+  * **Quantum SVM (QSVM):** Computes quantum state overlap in a $2^6 = 64$-dimensional Hilbert space:
+    $$K_{\text{Quantum}}(\mathbf{x}_i, \mathbf{x}_j) = |\langle 0^{\otimes 6} | U_{\Phi}^\dagger(\mathbf{x}_i) U_{\Phi}(\mathbf{x}_j) | 0^{\otimes 6} \rangle|^2$$
+* In near-term quantum computing (NISQ simulators or hardware), evaluating the quantum kernel matrix also scales quadratically $\mathcal{O}(N^2)$. Thus, **Classical Kernel SVM (RBF)** evaluated on this stratified scale provides the **exact scientific baseline** to test for quantum advantage!
+
+### 6.3 Performance Summary Across Paradigms
+* **Linear Classifiers (Logistic Regression & Linear SVM):** Extremely fast, but linear boundaries generate high false alarm rates (Precision between $37\%$ and $86\%$) due to complex fraud geometry.
+* **Kernel SVM (RBF):** Dramatically elevates precision ($89.75\%$) and recall ($98.54\%$) with an F1 of $0.9394$, validating the power of non-linear kernel transformations.
+* **XGBoost (Champion):** Achieves the highest precision ($99.76\%$) and recall ($99.51\%$) with a PR-AUC of $0.9982$ and $0.0012\text{ ms/tx}$ latency.
 
 * **Exported Champion Model:** [`model/data/champion_classical_model.joblib`](data/champion_classical_model.joblib).
 
