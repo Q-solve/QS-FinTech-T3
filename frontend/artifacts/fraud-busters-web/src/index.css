@@ -1,0 +1,10 @@
+@import "@workspace/fraud-busters-command-center/styles.css";
+
+@layer base {
+  html { background: hsl(var(--background)); }
+  body { min-width: 320px; }
+}
+
+@layer utilities {
+  .data-grid { background-image: linear-gradient(to right, hsl(var(--border) / .35) 1px, transparent 1px), linear-gradient(to bottom, hsl(var(--border) / .35) 1px, transparent 1px); background-size: 24px 24px; }
+}
