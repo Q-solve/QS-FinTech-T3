@@ -11,8 +11,8 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default:
-           // @replit: no hover, and add primary border
-           "bg-primary text-primary-foreground border border-primary-border",
+           // glass: subtle gradient + soft glow
+           "bg-gradient-to-b from-primary to-[hsl(265_92%_48%)] text-primary-foreground border border-white/20 shadow-[0_8px_24px_-8px_hsl(265_92%_60%_/_0.6)] hover:brightness-110",
         destructive:
           "bg-destructive text-destructive-foreground shadow-sm border-destructive-border",
         outline:

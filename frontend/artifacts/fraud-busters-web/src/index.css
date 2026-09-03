@@ -1,8 +1,19 @@
 @import "@workspace/fraud-busters-command-center/styles.css";
 
 @layer base {
-  html { background: hsl(var(--background)); }
-  body { min-width: 320px; }
+  html {
+    background: hsl(var(--background));
+  }
+  body {
+    min-width: 320px;
+    /* ambient glass backdrop: layered radial glows + subtle grid */
+    background:
+      radial-gradient(1100px 700px at 12% -8%, hsl(265 92% 62% / 0.22), transparent 60%),
+      radial-gradient(900px 600px at 108% 8%, hsl(189 96% 55% / 0.16), transparent 55%),
+      radial-gradient(700px 600px at 50% 120%, hsl(348 90% 62% / 0.12), transparent 55%),
+      hsl(var(--background));
+    background-attachment: fixed;
+  }
 }
 
 @layer utilities {
