@@ -59,8 +59,20 @@ def build_model_config() -> ModelConfig:
 def build_benchmarks(predictor) -> BenchmarkResponse:
     rows = [BenchmarkRow(**b) for b in REAL_BENCHMARKS]
     mode = "live" if predictor.available else "fallback"
-    return BenchmarkResponse(benchmark_table=rows, execution_mode=mode,
-                             metadata={"source": "measured full-data benchmarks"}, timestamp=_now())
+    return BenchmarkResponse(
+        benchmark_table=rows,
+        execution_mode=mode,
+        metadata={
+            "source": "ML sub-team measured benchmarks (model/README.md)",
+            "dataset": "PaySim-derived synthetic transactions",
+            "evaluation_split": "matched split",
+            "feature_count": 6,
+            "qubit_count": 6,
+            "execution_backend": "qBraid · statevector simulation",
+            "last_run": "2026-09-02",
+        },
+        timestamp=_now(),
+    )
 
 
 def _score_fields(tx: dict):
