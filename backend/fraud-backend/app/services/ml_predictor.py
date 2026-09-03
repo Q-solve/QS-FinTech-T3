@@ -86,7 +86,7 @@ class MLPredictor:
                 receiver_balance_before=request.receiver_balance_before,
                 timestamp=request.timestamp,
             )
-            x_scaled = self._scaler.transform([x])
+            x_scaled = self._scaler.transform(np.asarray([x], dtype=float))
             proba = self._classifier.predict_proba(x_scaled)[0]
             return float(proba[1])  # column 1 = fraud class
         except Exception as exc:  # pragma: no cover
