@@ -72,6 +72,13 @@ export default defineConfig({
     fs: {
       strict: true,
     },
+    proxy: {
+      // Dev-only: forward the real API contract to the FraudBusters backend.
+      '/api': {
+        target: process.env.VITE_API_PROXY || 'http://localhost:8000',
+        changeOrigin: true,
+      },
+    },
   },
   preview: {
     port,
