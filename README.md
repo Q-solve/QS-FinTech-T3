@@ -24,14 +24,12 @@ similarity signal, benchmarked **honestly** against strong classical baselines
 
 ```mermaid
 flowchart LR
-  subgraph Frontend[React + Vite dashboard]
-    U[User] --> D[Fraud Busters command center]
-  end
-  D -- "/api/*  (proxied)" --> B[FastAPI backend]
-  B -- "feature vector" --> M[M L Predictor<br/>champion XGBoost]
-  M --> S[scaler_angle.joblib<br/>[0, pi] MinMax]
-  B --> Q[QSVM kernel<br/>6-qubit ZZ feature map]
-  D -. "benchmarks" .-> T[model/data/*.joblib]
+  U[User] --> D[Fraud Busters dashboard]
+  D -- "/api" --> B[FastAPI backend]
+  B -- features --> M[Model predictor]
+  M --> S[angle scaler]
+  B --> Q[QSVM kernel]
+  D -. benchmarks .-> T[model data]
   T --> B
 ```
 
