@@ -1,0 +1,31 @@
+networks:
+  traefik-net:
+    external: true
+services:
+  fraudbusters-api:
+    build: ./api
+    container_name: fraudbusters-api
+    restart: unless-stopped
+    networks: [traefik-net]
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.fraudbusters-api.rule=Host(`fraudbusters.boogiecoin.org`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.fraudbusters-api.entrypoints=websecure"
+      - "traefik.http.routers.fraudbusters-api.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.fraudbusters-api.middlewares=security-headers@file,gzip-compress@file"
+      - "traefik.http.services.fraudbusters-api.loadbalancer.server.port=8000"
+  fraudbusters-web:
+    image: nginx:alpine
+    container_name: fraudbusters-web
+    restart: unless-stopped
+    volumes:
+      - ./web/html:/usr/share/nginx/html:ro
+      - ./web/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    networks: [traefik-net]
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.fraudbusters.rule=Host(`fraudbusters.boogiecoin.org`)"
+      - "traefik.http.routers.fraudbusters.entrypoints=websecure"
+      - "traefik.http.routers.fraudbusters.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.fraudbusters.middlewares=security-headers@file,gzip-compress@file"
+      - "traefik.http.services.fraudbusters.loadbalancer.server.port=80"
