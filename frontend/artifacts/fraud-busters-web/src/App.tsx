@@ -47,7 +47,7 @@ function Shell({ children }: { children: ReactNode }) {
     <header className="sticky top-0 z-20 border-b bg-sidebar/95 backdrop-blur">
       <div className="mx-auto flex h-16 max-w-screen-2xl items-center justify-between px-4 md:px-8">
         <Link href="/" className="flex items-center gap-3" data-testid="link-brand">
-          <span className="flex size-9 items-center justify-center rounded-lg bg-primary text-primary-foreground"><Hexagon className="size-5" /></span>
+          <img src="/logo.png" alt="Fraud Busters" className="h-9 w-auto rounded-md" />
           <span><span className="block text-sm font-bold tracking-tight">FRAUD BUSTERS</span><span className="block text-[10px] uppercase tracking-[.2em] text-muted-foreground">Command center</span></span>
         </Link>
         <div className="hidden items-center gap-3 md:flex"><StateBadge value={mode} /><span className="text-xs text-muted-foreground">Synthetic evaluation</span></div>
