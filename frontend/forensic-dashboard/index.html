@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>FraudBusters Forensic Console</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+  :root{
+    --bg:#05070d; --panel:#0b0f1a; --panel2:#111828; --line:#1c2740;
+    --txt:#e7ecf7; --muted:#7d8aa8; --cyan:#2de2ff; --green:#22e39a;
+    --amber:#ffb454; --red:#ff4d5e; --violet:#a78bfa; --grid:#151d31;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:radial-gradient(1400px 700px at 80% -10%,#0b1530 0,var(--bg) 55%) fixed;color:var(--txt);
+       font-family:'Inter','Segoe UI',system-ui,sans-serif;min-height:100vh}
+  .wrap{max-width:1320px;margin:0 auto;padding:0 20px}
+  /* topbar */
+  .top{display:flex;align-items:center;gap:14px;padding:14px 22px;border-bottom:1px solid var(--line);
+       background:rgba(5,8,14,.7);backdrop-filter:blur(10px);position:sticky;top:0;z-index:20}
+  .logo{width:36px;height:36px;border-radius:9px;background:linear-gradient(135deg,var(--red),var(--amber));
+        display:grid;place-items:center;color:#200;font-weight:800;font-size:18px}
+  .brand b{font-size:15px}.brand small{display:block;color:var(--muted);font-size:10px;letter-spacing:1.5px}
+  .top .sp{flex:1}
+  .modelchip{font-size:11px;border:1px solid var(--line);padding:5px 11px;border-radius:14px;display:flex;gap:6px;align-items:center}
+  .modelchip .dot{width:8px;height:8px;border-radius:50%}
+  .dot.on{background:var(--green);box-shadow:0 0 8px var(--green)}
+  .dot.off{background:var(--amber);box-shadow:0 0 8px var(--amber)}
+  header{padding:24px 0 6px}
+  h1{font-size:26px;letter-spacing:.5px}
+  h1 .fb{color:var(--red)} h1 .sub{color:var(--muted);font-weight:400}
+  .crumb{color:var(--muted);font-size:12px;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:6px}
+  .grid{display:grid;gap:16px}
+  .kpis{grid-template-columns:repeat(auto-fit,minmax(180px,1fr))}
+  .sec{display:flex;align-items:center;gap:10px;margin:22px 0 12px}
+  .sec h2{font-size:15px}.sec .gh{flex:1}.sec .gh small{color:var(--muted);font-weight:400;margin-left:8px}
+  .bar{width:4px;height:20px;border-radius:2px;background:var(--red)}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px}
+  .panel h3{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px}
+  .kpi{background:linear-gradient(180deg,rgba(255,255,255,.03),transparent);border:1px solid var(--line);border-radius:14px;padding:14px;position:relative;overflow:hidden}
+  .kpi::before{content:'';position:absolute;inset:0 auto 0 0;width:3px;background:var(--c,var(--cyan))}
+  .kpi .l{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px}
+  .kpi .v{font-size:24px;font-weight:800;margin-top:6px}
+  .cbox{position:relative;height:300px}
+  .cols{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .cols3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  @media(max-width:1000px){.cols,.cols3{grid-template-columns:1fr}}
+  /* scorer form */
+  .formgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:12px}
+  input,select{background:#0a1020;border:1px solid var(--line);color:var(--txt);border-radius:9px;padding:9px 10px;font-size:13px;outline:none;width:100%}
+  input:focus,select:focus{border-color:var(--cyan)}
+  label{display:block;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+  .btn{background:linear-gradient(135deg,var(--red),#ff7a45);border:none;color:#1a0a0a;font-weight:700;padding:11px 18px;border-radius:10px;cursor:pointer;font-size:14px}
+  .btn:disabled{opacity:.5;cursor:not-allowed}
+  .gaugewrap{display:flex;gap:20px;align-items:center}
+  .gauge{position:relative;width:170px;height:170px}
+  .gauge svg{transform:rotate(-90deg)}
+  .gval{position:absolute;inset:0;display:grid;place-items:center;flex-direction:column;text-align:center}
+  .gval b{font-size:34px}.gval span{font-size:11px;color:var(--muted)}
+  .verdict{font-size:22px;font-weight:800}
+  .verdict.flag{color:var(--red)} .verdict.allow{color:var(--green)}
+  .factors{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+  .factor{font-size:11px;background:#0a1020;border:1px solid var(--line);padding:4px 9px;border-radius:8px;color:var(--muted)}
+  /* table */
+  .tblwrap{overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:14px;max-height:380px}
+  table{width:100%;border-collapse:collapse;font-size:12.5px;min-width:720px}
+  th{position:sticky;top:0;background:var(--panel2);color:var(--muted);text-transform:uppercase;letter-spacing:.5px;font-size:10.5px;text-align:left;padding:10px 12px}
+  td{padding:10px 12px;border-top:1px solid var(--line)}
+  tr:hover td{background:rgba(255,255,255,.02)}
+  .bdg{padding:3px 8px;border-radius:10px;font-size:10.5px;font-weight:700}
+  .bdg.fl{background:rgba(255,77,94,.16);color:var(--red)}
+  .bdg.al{background:rgba(34,227,154,.14);color:var(--green)}
+  .sc{font-weight:700}.sc.hi{color:var(--red)}.sc.md{color:var(--amber)}.sc.lo{color:var(--green)}
+  .fade{animation:fade 1.4s infinite}
+  @keyframes fade{0%,100%{opacity:1}50%{opacity:.45}}
+  footer{color:var(--muted);font-size:11.5px;text-align:center;padding:28px 0}
+</style>
+</head>
+<body>
+
+<div class="top">
+  <div class="logo">⚡</div>
+  <div class="brand"><b>FraudBusters</b><small>Forensic Console · Team 3</small></div>
+  <div class="sp"></div>
+  <span class="modelchip"><span class="dot off fade" id="mcdot"></span>MODEL <span id="mcstatus">checking…</span></span>
+</div>
+
+<div class="wrap">
+  <div class="crumb">QSOLVE · Quantum-Enhanced Fraud Detection</div>
+  <header><h1><span class="fb">FORENSIC</span> <span class="sub">mobile-money threat console</span></h1></header>
+
+  <!-- KPIs -->
+  <div class="grid kpis" id="kpis" style="margin-top:14px"></div>
+
+  <!-- Live scorer -->
+  <div class="sec"><span class="bar"></span><h2>Live transaction scorer</h2>
+    <div class="gh"><small>submits to the backend · <code>/api/v1/fraud/score</code></small></div></div>
+  <div class="grid cols">
+    <div class="panel">
+      <h3>Transaction profile</h3>
+      <div class="formgrid" id="form"></div>
+      <button class="btn" id="scorebtn" onclick="scoreTx()">Score transaction</button>
+      <div id="err" style="color:var(--red);font-size:12px;margin-top:8px"></div>
+    </div>
+    <div class="panel">
+      <h3>Risk assessment</h3>
+      <div class="gaugewrap">
+        <div class="gauge"><svg width="170" height="170"><circle cx="85" cy="85" r="72" fill="none" stroke="#151d31" stroke-width="14"/><circle id="garc" cx="85" cy="85" r="72" fill="none" stroke="var(--green)" stroke-width="14" stroke-linecap="round" stroke-dasharray="452" stroke-dashoffset="452"/></svg>
+          <div class="gval"><b id="gval">—</b><span>risk</span></div></div>
+        <div><div class="verdict allow" id="verdict">—</div>
+          <div style="color:var(--muted);font-size:12px;margin-top:4px" id="modeltag">—</div>
+          <div class="factors" id="factors"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Benchmarks -->
+  <div class="sec"><span class="bar"></span><h2>Model evidence</h2>
+    <div class="gh"><small>QSVM vs classical · from the ML sub-team benchmark</small></div></div>
+  <div class="grid cols3">
+    <div class="panel"><h3>Head-to-head (N=500)</h3><div class="cbox"><canvas id="c_head"></canvas></div></div>
+    <div class="panel"><h3>Precision / false alarms</h3><div class="cbox"><canvas id="c_prec"></canvas></div></div>
+    <div class="panel"><h3>Scaling: QSVM @ N=5k vs 16k</h3><div class="cbox"><canvas id="c_scale"></canvas></div></div>
+  </div>
+
+  <!-- Batch demo table -->
+  <div class="sec"><span class="bar"></span><h2>Scored cases</h2><div class="gh"><small>batch via <code>/api/v1/fraud/score/batch</code></small></div></div>
+  <div class="tblwrap"><table id="casestable">
+    <thead><tr><th>Tx ID</th><th>Type</th><th>Amount</th><th>Balance</th><th>Device</th><th>Probability</th><th>Decision</th></tr></thead>
+    <tbody id="casebody"><tr><td colspan="7" style="color:var(--muted)">Loading…</td></tr></tbody>
+  </table></div>
+
+  <footer>FraudBusters Team 3 · QSOLVE 2026 · Forensic Console wired to the real scoring API</footer>
+</div>
+
+<script>
+const API = (localStorage.getItem('fb_api')||'http://localhost:8000')+'/api/v1';
+const fmt = n => (n==null?'—':(Number(n)*100).toFixed(1)+'%');
+
+// ---- backend / model status ----
+async function refreshStatus(){
+  try{
+    const m = await (await fetch(API+'/models/active')).json();
+    const on = m.status==='ready';
+    document.getElementById('mcstatus').textContent = (on?'READY · ':'FALLBACK · ')+m.feature_count+' feat';
+    const d=document.getElementById('mcdot'); d.className='dot '+(on?'on':'off');
+  }catch(e){ document.getElementById('mcstatus').textContent='OFFLINE'; }
+}
+refreshStatus();
+
+// KPIs (published benchmark)
+document.getElementById('kpis').innerHTML = [
+  ['QSVM F1 (50:50, N=16k)', '0.963', '94% precision'],
+  ['Fraud intercepted', '98.5%', '1619 / 1643 test frauds'],
+  ['QSVM false alarms', '101', 'vs RBF-SVM 105'],
+  ['Classical champ (XGB)', '0.9996', 'full-dataset ROC-AUC'],
+].map(([l,v,n],i)=>`<div class="kpi" style="--c:${['var(--violet)','var(--green)','var(--red)','var(--amber)'][i]}">
+  <div class="l">${l}</div><div class="v">${v}</div><div style="color:var(--muted);font-size:11px;margin-top:2px">${n}</div></div>`).join('');
+
+// ---- charts (from model/README.md) ----
+const headLabels=['QSVM\n(circular ZZ)','QSVM\n(unentangled)','RBF-SVM','Linear SVM','RandForest','XGBoost'];
+const headF1=[0.5823,0.4167,0.4906,0,0.7250,0.9762];
+const headPrec=[0.6053,0.2913,0.3305,0,0.7436,0.9535];
+const headFp=[15,73,79,0,10,2];
+new Chart(document.getElementById('c_head'),{type:'bar',data:{labels:headLabels,datasets:[{label:'F1',data:headF1,backgroundColor:headLabels.map(l=>l.startsWith('QSVM')?'#a78bfa':'#2de2ff')}]},
+ options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,grid:{color:'#151d31'},max:1}}}});
+new Chart(document.getElementById('c_prec'),{type:'bar',data:{labels:headLabels,datasets:[{label:'Precision',data:headPrec,backgroundColor:'#22e39a'},
+ {label:'False alarms',data:headFp.map(v=>v/80),backgroundColor:'#ff4d5e'}]},
+ options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#7d8aa8',boxWidth:10}}},scales:{y:{beginAtZero:true,grid:{color:'#151d31'}}}}});
+new Chart(document.getElementById('c_scale'),{type:'bar',data:{labels:['N=5k QSVM','N=5k RBF','N=16k QSVM','N=16k RBF'],
+ datasets:[{data:[0.6213,0.6074,0.9628,0.9666],backgroundColor:['#a78bfa','#2de2ff','#a78bfa','#2de2ff'],borderRadius:6}]},
+ options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,grid:{color:'#151d31'},title:{display:true,text:'F1'}}}}});
+
+// ---- form fields ----
+const fields=[['transaction_type','select',['TRANSFER','CASH_OUT','PAYMENT','CASH_IN','DEBIT']],
+ ['amount','number','2500000'],['sender_balance_before','number','1000000'],['receiver_balance_before','number','1000'],
+ ['hour','number','3'],['sim_age_days','number','300'],['transactions_last_hour','number','2'],['device','text','+2547xx-iphone']];
+document.getElementById('form').innerHTML=fields.map(([k,t,def])=>{
+  if(t==='select'){return `<div><label>${k}</label><select id="f_${k}">${def.map(o=>`<option>${o}</option>`).join('')}</select></div>`;}
+  return `<div><label>${k}</label><input id="f_${k}" type="number" value="${def}"></div>`;}).join('')
+  +`<div><label>device_id (optional)</label><input id="f_device_id" type="text" placeholder="dev-…"></div>`;
+
+function garc(p){
+  const col = p>=0.7?'var(--red)':(p>=0.4?'var(--amber)':'var(--green)');
+  const g=document.getElementById('garc'); g.setAttribute('stroke',col);
+  g.style.strokeDashoffset=452*(1-p);
+  document.getElementById('gval').textContent=fmt(p);
+  const v=document.getElementById('verdict'); v.textContent=(p>=0.5?'FLAG':'ALLOW');
+  v.className='verdict '+(p>=0.5?'flag':'allow');
+}
+
+async function scoreTx(){
+  const err=document.getElementById('err'); err.textContent='';
+  const btn=document.getElementById('scorebtn'); btn.disabled=true; btn.textContent='Scoring…';
+  const amount=parseFloat(f_get('amount'));
+  const sbb=parseFloat(f_get('sender_balance_before'));
+  const rbb=parseFloat(f_get('receiver_balance_before'));
+  const payload={transaction_id:'demo-'+(Date.now()%100000),timestamp:'2026-01-01T'+String(+f_get('hour')).padStart(2,'0')+':00:00',
+    amount:String(amount),transaction_type:f_get('transaction_type'),sender_id:'S-'+Math.random().toString(36).slice(2,8),receiver_id:'R-'+Math.random().toString(36).slice(2,8),
+    sender_balance_before:String(sbb),sender_balance_after:String(Math.max(0,sbb-amount)),
+    receiver_balance_before:String(rbb),receiver_balance_after:String(rbb+amount),
+    device_id:document.getElementById('f_device_id').value||null,location:'Nairobi',
+    sim_age_days:parseInt(f_get('sim_age_days')),transactions_last_hour:parseInt(f_get('transactions_last_hour'))};
+  try{
+    const r=await fetch(API+'/fraud/score',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const j=await r.json(); garc(j.fraud_probability);
+    document.getElementById('modeltag').textContent=j.model_name+' · '+j.model_version;
+    document.getElementById('factors').innerHTML=j.risk_factors.map(f=>`<span class="factor">${f}</span>`).join('')||'<span class="factor">none</span>';
+  }catch(e){ err.textContent='Backend unreachable: '+e.message+'. Start it: uvicorn app.main:app --reload (port 8000).'; }
+  finally{ btn.disabled=false; btn.textContent='Score transaction'; }
+}
+function f_get(k){const el=document.getElementById('f_'+k);return el?el.value:'0';}
+
+// ---- batch demo cases ----
+async function runCases(){
+  const base={timestamp:'2026-01-01T03:00:00',sender_id:'S1',receiver_id:'R1',sender_balance_after:'0',location:'Nairobi'};
+  const cases=[
+   {transaction_id:'CASE-01',transaction_type:'TRANSFER',amount:'2500000',sender_balance_before:'1000000',receiver_balance_before:'1000',device_id:null,sim_age_days:2,transactions_last_hour:14},
+   {transaction_id:'CASE-02',transaction_type:'CASH_OUT',amount:'45000',sender_balance_before:'800000',receiver_balance_before:'0',device_id:'dev-A',sim_age_days:900,transactions_last_hour:1},
+   {transaction_id:'CASE-03',transaction_type:'TRANSFER',amount:'9000000',sender_balance_before:'1500000',receiver_balance_before:'0',device_id:null,sim_age_days:5,transactions_last_hour:20},
+   {transaction_id:'CASE-04',transaction_type:'PAYMENT',amount:'3200',sender_balance_before:'50000',receiver_balance_before:'8000',device_id:'dev-B',sim_age_days:1500,transactions_last_hour:3},
+   {transaction_id:'CASE-05',transaction_type:'TRANSFER',amount:'1800000',sender_balance_before:'1200000',receiver_balance_before:'50',device_id:null,sim_age_days:400,transactions_last_hour:6},
+  ].map(c=>({...base,...c,sender_balance_after:String(Math.max(0,c.sender_balance_before-c.amount)),receiver_balance_after:String((+c.receiver_balance_before)+(+c.amount))}));
+  try{
+    const r=await fetch(API+'/fraud/score/batch',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({transactions:cases})});
+    if(!r.ok) throw 0;
+    const j=await r.json();
+    document.getElementById('casebody').innerHTML=j.predictions.map(p=>{
+      const sc=p.fraud_probability; const cls=sc>=0.7?'hi':(sc>=0.4?'md':'lo');
+      const cs=cases.find(x=>x.transaction_id===p.transaction_id);
+      return `<tr><td>${p.transaction_id}</td><td>${cs.transaction_type}</td><td>KES ${(+cs.amount/1000).toFixed(0)}k</td>
+       <td>KES ${(+cs.sender_balance_before/1000).toFixed(0)}k</td><td>${cs.device_id||'<span style="color:var(--amber)">none</span>'}</td>
+       <td class="sc ${cls}">${fmt(p.fraud_probability)}</td>
+       <td><span class="bdg ${p.decision==='flag'?'fl':'al'}">${p.decision.toUpperCase()}</span></td></tr>`;}).join('');
+  }catch(e){ document.getElementById('casebody').innerHTML='<tr><td colspan="7" style="color:var(--muted)">Backend offline — start uvicorn to see live scoring.</td></tr>'; }
+}
+runCases();
+</script>
+</body>
+</html>
