@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.router import api_router
+from app.api.routes.contract import configure_contract_routes
 from app.core.config import settings
 
 
@@ -21,11 +22,16 @@ app.add_middleware(
 
 app.include_router(api_router, prefix=settings.api_prefix)
 
+# frontend contract route that must NOT carry the /api/v1 prefix
+configure_contract_routes(app)
+
 
 @app.get("/", include_in_schema=False)
 def root():
     return {
         "name": settings.app_name,
         "docs": "/docs",
+        "health": "/api/healthz",
+        "overview": "/api/v1/overview",
         "model_status": "/api/v1/models/active",
     }

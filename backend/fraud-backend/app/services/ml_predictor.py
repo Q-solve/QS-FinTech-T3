@@ -75,6 +75,21 @@ class MLPredictor:
         return [amount_to_oldbalance, oldbalance_org_log, amount_log,
                 orig_depleted, oldbalance_dest_log, hour]
 
+    def predict_from_raw(self, *, amount: float, sender_balance_before: float,
+                         receiver_balance_before: float, hour: float = 12.0) -> Optional[float]:
+        """Score from raw PaySim-style fields (used by the /analyze contract)."""
+        if not self.available or self._classifier is None or self._scaler is None:
+            return None
+        ts = datetime(2026, 1, 1, int(hour) % 24, 0)
+        x = self._features(amount=amount, sender_balance_before=sender_balance_before,
+                           receiver_balance_before=receiver_balance_before, timestamp=ts)
+        try:
+            x_scaled = self._scaler.transform(np.asarray([x], dtype=float))
+            return float(self._classifier.predict_proba(x_scaled)[0][1])
+        except Exception as exc:  # pragma: no cover
+            print(f"[ml_predictor] scoring error: {exc}")
+            return None
+
     def predict_probability(self, request) -> Optional[float]:
         """Return fraud probability in [0, 1] or None if the model is unavailable."""
         if not self.available or self._classifier is None or self._scaler is None:
