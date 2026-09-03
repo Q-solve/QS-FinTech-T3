@@ -9,13 +9,19 @@ from app.schemas.contract import (
 )
 
 # Real benchmark rows measured on the full M-Pesa dataset (MPESA_RESULTS.md) / PaySim.
+# Real benchmark rows from the ML sub-team's measured head-to-head (model/README.md §6.3,
+# N=500 matched split). QSVM champion is first so the UI's "primary" snapshot is correct.
 REAL_BENCHMARKS = [
-    {"model": "RandomForest", "roc_auc": 0.8339, "note": "classical, full data"},
-    {"model": "LogisticRegression", "roc_auc": 0.8308, "note": "classical, full data"},
-    {"model": "XGBoost", "roc_auc": 0.8216, "note": "classical, full data"},
-    {"model": "RBF-SVM", "roc_auc": 0.8106, "note": "classical kernel, full data"},
-    {"model": "QuantumFeatures+LogReg", "roc_auc": 0.8075, "note": "full-data quantum encoding"},
-    {"model": "QSVM (circular ZZ)", "roc_auc": 0.9285, "note": "PaySim matched benchmark (ML team)"},
+    {"model": "QSVM (circular ZZ)", "roc_auc": 0.9285, "precision": 0.6053,
+     "recall": 0.5610, "f1": 0.5823, "note": "champion · entangled 6-qubit"},
+    {"model": "Random Forest", "roc_auc": 0.9491, "precision": 0.7436,
+     "recall": 0.7073, "f1": 0.7250, "note": "classical ensemble"},
+    {"model": "Kernel SVM (RBF)", "roc_auc": 0.9839, "precision": 0.3305,
+     "recall": 0.9512, "f1": 0.4906, "note": "classical kernel"},
+    {"model": "XGBoost", "roc_auc": 0.9996, "precision": 0.9535,
+     "recall": 0.9951, "f1": 0.9963, "note": "classical champion"},
+    {"model": "QSVM (unentangled)", "roc_auc": 0.9149, "precision": 0.2913,
+     "recall": 0.7317, "f1": 0.4167, "note": "no entanglement (contrast)"},
 ]
 
 FEATURE_SCHEMA = [
