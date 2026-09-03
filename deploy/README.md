@@ -1,42 +1,70 @@
-# Deploy FraudBusters → fraudbusters.boogiecoin.org
+# Deploying FraudBusters → fraudbusters.boogiecoin.org
 
-The stack is a **FastAPI backend** + a **React (Vite) frontend**. Deployment does a
-local production build, then pushes both to the VPS behind a reverse proxy.
+The site runs as a **Docker + Traefik** stack on the VPS. The stack is a FastAPI
+backend (API + real model) and a React (Vite) frontend served by nginx, both
+routed by Traefik for the hostname.
 
-## Why run it from YOUR machine
-`ssh vps` (`51.195.82.155:22022`) is **not reachable from the sandbox network**
-(connection times out — the VPS firewall likely allows only your IP). So run the
-deploy from a terminal that can reach the VPS.
+## How to reach the VPS
 
-## 1. Confirm SSH works from your machine
+The VPS (`ubuntu@51.195.82.155:22022`) is not directly reachable from every
+network. Reach it through the **homelab jump host** over Tailscale:
+
 ```bash
-ssh vps 'echo ok'
+# labhouse = the "homelabboogie" Tailscale node
+# from any Tailscale-connected host:
+ssh -J root@100.79.181.102 -p 22022 -i ~/.ssh/boogie_vps ubuntu@51.195.82.155
 ```
-If this fails, you're on a network the VPS blocks. Open the SSH port for your IP,
-or run from home.
 
-## 2. Deploy (one command, from the repo root)
+Add to `~/.ssh/config` for a tidy `vps` alias through the jump:
+```
+Host labhouse
+  HostName 100.79.181.102
+  User root
+
+Host vps
+  HostName 51.195.82.155
+  User ubuntu
+  Port 22022
+  IdentityFile ~/.ssh/boogie_vps
+  ProxyJump labhouse
+```
+Then `ssh vps 'echo ok'`.
+
+## Deploy (build + ship)
+
+From the repo root (requires node + pnpm locally):
 ```bash
-chmod +x deploy/deploy.sh
 ./deploy/deploy.sh vps
 ```
 It:
 1. builds `fraud-busters-web` → static bundle
-2. rsyncs backend + frontend + model artifacts to `/opt/fraudbusters`
-3. installs a `fraudbusters` systemd service (API on `127.0.0.1:8000`)
+2. ships the backend + model artifacts to `/opt/fraudbusters`
+3. installs/restarts the Docker stack (see `deploy/fraudbusters-docker/`)
 
-## 3. Reverse proxy (Caddy/nginx) for the subdomain
-Serve the built `frontend/` statically and proxy `/api` to the backend. Caddy:
-```
-fraudbusters.boogiecoin.org {
-    root * /opt/fraudbusters/frontend
-    reverse_proxy /api/* http://127.0.0.1:8000
-    try_files {path} /index.html
-}
+## Stack layout on the VPS (`/opt/fraudbusters`)
+
+```text
+/opt/fraudbusters
+├── docker-compose.yml      # fraudbusters-api + fraudbusters-web on traefik-net
+├── api/                    # FastAPI app + Dockerfile + model_data/*.joblib
+└── web/
+    ├── html/               # built React bundle (nginx)
+    └── nginx.conf
 ```
 
-## 4. Verify
+Traefik routes:
+- `Host(fraudbusters.boogiecoin.org)` → nginx (static app)
+- `Host(fraudbusters.boogiecoin.org) && PathPrefix(/api)` → FastAPI
+
+## Public DNS (Cloudflare)
+
+`fraudbusters.boogiecoin.org` is proxied by Cloudflare. Ensure an **A record** for
+`fraudbusters` points to the VPS origin (`51.195.82.155`) and the **SSL/TLS mode =
+Full**, so Cloudflare forwards to Traefik.
+
+## Verify
+
 ```bash
-curl -s https://fraudbusters.boogiecoin.org/api/v1/overview   # -> system_status ready
-# open https://fraudbusters.boogiecoin.org/  (React app, real data)
+ssh vps "curl -sk https://127.0.0.1/ -H 'Host: fraudbusters.boogiecoin.org' | head -c 120"
+curl -s https://fraudbusters.boogiecoin.org/api/v1/overview   # once DNS is set
 ```
