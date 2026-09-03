@@ -247,3 +247,31 @@ pnpm-debug.log*
 .yarn/unplugged/
 .yarn/build-state.yml
 .yarn/install-state.gz
+# ---- Secrets, SSH & deployment credentials (never commit) ----
+# SSH keys / configs
+*.pem
+*.key
+*.ppk
+*.p12
+id_rsa*
+id_ed25519*
+id_ecdsa*
+id_dsa*
+.ssh/
+*id_rsa*
+*.pub  # (public keys usually fine, but keep out of this repo)
+# Environment / secrets
+.env
+.env.*
+!.env.example
+*.env
+secrets.*
+*.secret
+*.token
+# Cloud / tunnel credentials
+cloudflared*
+ngrok*.yml
+.ngrok*
+*.credential
+# VPS deployment local artifacts
+deploy/secrets/
