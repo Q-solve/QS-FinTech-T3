@@ -107,17 +107,6 @@ PORT=5173 BASE_PATH=/ pnpm --filter @workspace/fraud-busters-web dev
 
 ---
 
-## Deploying to fraudbusters.boogiecoin.org
-
-The site runs as a **Docker + Traefik** stack on the VPS (reachable through the
-`labhouse` homelab via Tailscale as a jump host). See `deploy/README.md`.
-
-```bash
-./deploy/deploy.sh vps        # builds frontend + ships backend & model, starts systemd
-```
-
----
-
 ## Stack
 Python 3.12 · FastAPI · Qiskit / QSVM · scikit-learn · XGBoost · joblib ·
 React 19 · Vite · Tailwind · Radix UI · Recharts · Docker · Traefik · Cloudflare
